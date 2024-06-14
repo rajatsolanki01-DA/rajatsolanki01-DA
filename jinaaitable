@@ -1,0 +1,62 @@
+import requests
+#!pip install tabulate==0.9.0
+import tabulate
+
+# URL to fetch content from
+url = "https://indianexpress.com/section/entertainment/web-series/page/2/"
+
+# Fetching the content from the URL
+response = requests.get("https://r.jina.ai/" + url)
+
+# Checking if the request was successful
+if response.status_code == 200:
+    markdown_content = response.text
+
+    # Remove blank lines
+    cleaned_content = "\n".join([line for line in markdown_content.split('\n') if line.strip()])
+
+    # Save the cleaned content to a text file
+    with open('cleaned_markdown_content.txt', 'w', encoding='utf-8') as file:
+        file.write(cleaned_content)
+
+    print("Cleaned markdown content has been successfully saved to 'cleaned_markdown_content.txt'.")
+else:
+    print(f"Failed to retrieve content. HTTP Status Code: {response.status_code}")
+
+import re
+from tabulate import tabulate
+
+# Read the content from the file
+with open('cleaned_markdown_content.txt', 'r', encoding='utf-8') as file:
+    markdown_content = file.read()
+
+# Remove blank lines
+cleaned_content = "\n".join([line for line in markdown_content.split('\n') if line.strip()])
+
+# Save the cleaned content back to the file (optional)
+with open('cleaned_markdown_content.txt', 'w', encoding='utf-8') as file:
+    file.write(cleaned_content)
+
+# Extracting URLs from markdown content
+urls = re.findall(r'\]\((https?://.*?)\)', cleaned_content)
+
+# Extracting date and time from markdown content
+date_time_matches = re.findall(r'(\w{3} \d{2}, \d{4} \d{2}:\d{2} \w{3})', cleaned_content)
+
+# Extracting text descriptions from markdown content
+text_matches = re.findall(r'\)\n.*?\n(.*?)\n', cleaned_content)
+
+# Ensure all lists have the same length by filling in missing values with "N/A"
+max_length = len(text_matches)
+urls.extend(['N/A'] * (max_length - len(urls)))
+date_time_matches.extend(['N/A'] * (max_length - len(date_time_matches)))
+text_matches.extend(['N/A'] * (max_length - len(text_matches)))
+
+# Preparing data for the table
+table_data = []
+for text, date_time, url in zip(text_matches, date_time_matches, urls):
+    table_data.append([text.strip(), date_time, url])
+
+# Printing the data in tabular format
+headers = ["News Description", "Date/Time", "Image URL"]
+print(tabulate(table_data, headers, tablefmt="grid"))
